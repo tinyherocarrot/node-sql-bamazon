@@ -1,17 +1,63 @@
 var inquirer = require("inquirer");
-var mysql = require ("mysql");
-var promise-mysql = require("promise-mysql");
+// var mysql = require ("mysql");
+var mysql = require("promise-mysql");
+// global variable which stores array of strings, set by readInventory()
+// var inventory = [];
 
-var connection = mysql.createConnection({
+var connection;
+
+mysql.createConnection({
     host: "localhost",
     port: 3306,
     user: "root",
     password:"password",
     database: "bamazon"
+})
+.then( conn => { // read inventory (QUERY ONLY)
+    connection = conn;
+    console.log("IN THE FIRST THEN")
+    return connection.query("SELECT item_id, product_name, price FROM products");
+
+}).then( (err, rows) => { // read inventory (CONSTRUCTING DISPLAYABLE INVENTORY)
+
+	if (err) throw err;
+	// console.log(rows)
+	console.log("IN THE SECOND THEN")
+	//return an array of strings
+	var result = []
+	rows.forEach(function(item) {
+		result.push(`${item.item_id}) ${item.product_name} || $${item.price}`)
+	})
+	console.log("in readInventory callback: ");
+	console.log( result);
+
+	connection.end();
+
+	return result;
+		
+}).then( result => {
+	console.log("IN THE THIRD THEN")
+	console.log(result);
+	return inquirer.prompt({
+	
+		// Display all of the items available for sale. 
+		// Include the ids, names, and prices of products for sale.
+		type: "rawlist",
+		message: "What would you like to buy? ",
+		choices: result,
+		name: "selected_item"
+	})
+}).then( answer => {
+	console.log("IN THE 4TH THEN")
+	console.log(answer)
+
+})
+.catch(function(error){
+    if (connection && connection.end) connection.end();
+    //logs out the error
+    console.log(error);
 });
 
-// global variable which stores array of strings, set by readInventory()
-var inventory = [];
 
 // run as NOT part of prmise
 // OR use promise-mysql
@@ -37,12 +83,8 @@ var readInventory = function() {
 	
 }
 
-function setInventory(value) {
-  inventory = value;
-  console.log(inventory);
-}
 
-var promptItemSelection = function() {
+var promptItemSelection = function(inventory) {
 	// var choices = readInventory();
 	console.log("in item selection")
 	console.log(inventory);
@@ -69,13 +111,13 @@ var run = function() {
 }
 
 
-connection.connect(function(err) {
-	if (err) throw err;
-	console.log("connected as id: " + connection.threadId);
+// connection.connect(function(err) {
+// 	if (err) throw err;
+// 	console.log("connected as id: " + connection.threadId);
 
-	// console.log(inventory);
-	readInventory();
-	// console.log(inventory);
-	run();
+// 	// console.log(inventory);
+// 	readInventory();
+// 	// console.log(inventory);
+// 	run();
 	
-})
+// })
