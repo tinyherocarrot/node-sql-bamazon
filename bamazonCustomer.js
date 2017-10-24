@@ -1,5 +1,6 @@
 var inquirer = require("inquirer");
 var mysql = require ("mysql");
+var colors = require("colors");
 
 
 var connection = mysql.createConnection({
@@ -87,14 +88,14 @@ var updateItemQuantity = function(selected_item, selected_quantity) {
 
 			// if item is out of stock, send message to user
 			if (stock <= 0) {
-				console.log(`This item is out of stock. `);
+				console.log(`\nThis item is out of stock.\n`.red);
 				
 				// then return user to purchase menu
 				run();
 			}
 
 			// if stock is sufficient
-			if (stock >= selected_quantity) {
+			else if (stock >= selected_quantity) {
 
 				// calculate new stock
 				var new_stock = (stock - selected_quantity);
@@ -102,11 +103,12 @@ var updateItemQuantity = function(selected_item, selected_quantity) {
 
 				// and update db with new stock
 				connection.query(
-					"UPDATE products SET ? WHERE ?",
+					"UPDATE products SET ?, product_sales = product_sales + ? WHERE ?",
 					[
 						{
 							stock_quantity: new_stock
 						},
+						purchase_total,
 						{
 							product_name: selected_item
 						}
@@ -115,7 +117,7 @@ var updateItemQuantity = function(selected_item, selected_quantity) {
 						if (err) throw err;
 
 						// congratulate user with a success message
-						console.log(`Purchase successful! You have bought ${selected_quantity} ${selected_item} for $${purchase_total}`);
+						console.log(`\nPurchase successful! You have bought ${selected_quantity} ${selected_item} for $${purchase_total}`.green);
 						console.log(`---------------------------\n`);
 						
 						// and return user to purchase menu
@@ -125,7 +127,7 @@ var updateItemQuantity = function(selected_item, selected_quantity) {
 
 			} else { //if stock is insufficient, reject user request
 				
-				console.log(`Stock insufficient. Try again.`);
+				console.log(`\nStock insufficient. Try again.\n`.red);
 				
 				// and return user to purchase menu
 				promptItemQuantity(selected_item);
@@ -143,8 +145,12 @@ var updateItemQuantity = function(selected_item, selected_quantity) {
 connection.connect(function(err) {
 	if (err) throw err;
 
+
 	// then console log success message, if no err
 	console.log("connected as id: " + connection.threadId);
+	console.log("\n------------------------------------------------------".yellow)
+	console.log("Welcome to Bamazon! Your command line one-stop-shop".yellow)
+	console.log("------------------------------------------------------\n".yellow)
 
 	// run main fn
 	run();

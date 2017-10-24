@@ -1,5 +1,6 @@
 var inquirer = require("inquirer");
 var mysql = require ("mysql");
+require("colors");
 
 var connection = mysql.createConnection({
     host: "localhost",
@@ -14,7 +15,7 @@ var run = function() {
 	inquirer.prompt([
 	{
 		type: "list",
-		message: "What would you like to do?",
+		message: "\nWhat would you like to do?",
 		choices: [
 			"View Products for Sale",
 			"View Low Inventory",
@@ -71,6 +72,7 @@ var readInventory = function(action) {
 var printInventory = function(inventory) {
 	
 	inventory.forEach(item => {
+		console.log(`--------------------\n`);
 		console.log(`ITEM ID ${item.item_id}`);
 		console.log(`${item.product_name}`);
 		console.log(`$${item.price}/ea`);
@@ -85,15 +87,20 @@ var printInventory = function(inventory) {
 // list all items with an inventory count lower than five
 var viewLowInventory = function() {
 	connection.query(
-		"SELECT item_id, product_name FROM products WHERE stock_quantity<5", 
+		"SELECT item_id, product_name, stock_quantity FROM products WHERE stock_quantity<5", 
 		function(err, res) {
 			if (err) throw err;
 
-			console.log(`You have less than 5 stock of the following:`);
-			res.forEach(item => {
-				console.log(`ITEM #${item.item_id} -- ${item.product_name}`);
-			})	
-			console.log(`---------------------------\n`);
+			if (res.length === 0) {
+				console.log(`\nNo low stock!\n`.green);
+			} else {
+				console.log(`\nYou have less than 5 stock of the following:\n`.yellow);
+				res.forEach(item => {
+					console.log(`ITEM #${item.item_id} -- ${item.product_name}    stock: ${item.stock_quantity}`.red);
+				})	
+				console.log(`---------------------------\n`);
+				
+			}
 
 			// then returns user to action menu
 			run();
@@ -114,14 +121,14 @@ var addWhatToInventory = function(inventory) {
 	inquirer.prompt([
 	{
 		type: "list",
-		message: "What item would you like to restock?",
+		message: "\nWhat item would you like to restock?",
 		choices: printableInventory,
 		name: "selected_item",
 		pageSize: 12
 	},
 	{
 		type: "input",
-		message: "How many would you like to add?",
+		message: "\nHow many would you like to add?",
 		name: "numToAdd"
 	}
 		]).then( answer => {
@@ -154,7 +161,7 @@ var addToInventory = function(selected_item, newStock) {
 		function(err, res) {
 			if (err) throw err;
 			
-			console.log(`Restock was successful! Stock of ${selected_item} is now ${newStock}.`);
+			console.log(`\nRestock was successful! Stock of ${selected_item} is now ${newStock}.`.green);
 			console.log(`---------------------------\n`);
 			
 			// then returns user to action menu
@@ -168,22 +175,22 @@ var addNewProduct = function() {
 	inquirer.prompt([
 		{
 			type: "input",
-			message: "Enter product name: ",
+			message: "\nEnter product name: ",
 			name: "new_product_name"
 		},
 		{
 			type: "input",
-			message: "Enter product category: ",
+			message: "\nEnter product category: ",
 			name: "new_product_category"
 		},
 		{
 			type: "input",
-			message: "Enter product price: ",
+			message: "\nEnter product price: ",
 			name: "new_product_price"
 		},
 		{
 			type: "input",
-			message: "Enter product stock: ",
+			message: "\nEnter product stock: ",
 			name: "new_product_stock"
 		},
 	]).then(answers => {
@@ -196,7 +203,7 @@ var addNewProduct = function() {
 		var query = connection.query(sql, function(err, res) {
 				if (err) throw err;
 
-				console.log(`New product was successfully added!`);
+				console.log(`\nNew product was successfully added!`.green);
 				console.log(`---------------------------\n`);
 
 				// then returns user to action menu
@@ -213,6 +220,9 @@ connection.connect(function(err) {
 	// indicate connection,
 	console.log("connected as id: " + connection.threadId);
 
+	console.log("\n------------------------------------".yellow)
+	console.log("Welcome to Bamazon! Manager View".yellow)
+	console.log("------------------------------------\n".yellow)
 	// and run the main function
 	run();
 	
